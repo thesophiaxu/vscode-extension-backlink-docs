@@ -1,9 +1,7 @@
-/*---------------------------------------------------------
- * Copyright (C) Microsoft Corporation. All rights reserved.
- *--------------------------------------------------------*/
-
 import * as vscode from 'vscode';
+import { WorkspaceIndex } from '.';
 import { CodelensProvider } from './CodelensProvider';
+import { normalizePath } from './utils';
 
 
 /**
@@ -14,8 +12,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let files: vscode.Uri[] = [];
 	let symbols: Record<string, vscode.SymbolInformation[]> = {};
-
-	const normalizePath = (path: string) => path.replace(vscode.workspace.workspaceFolders?.[0].uri.path + '/', '');	
 
 	const provider = vscode.languages.registerCompletionItemProvider(
 		'*',
@@ -81,34 +77,20 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let provider2 = getLinkProvider();
 
-	const fsChangeHandler = async () => {
-		files = await vscode.workspace.findFiles('**/*.*', '**/node_modules/**');
-		await Promise.all(files.map(async file => {
-			try {
-				const mySymbols = await vscode.commands.executeCommand("vscode.executeDocumentSymbolProvider", file);
-				if (Array.isArray(mySymbols)) {
-					symbols[normalizePath(file.path)] = mySymbols;
-				};
-			} catch (e) {
-				return ;
-			}
-		}));
+	// Setup fs
+	const fsChangeHandler = async (indexer: WorkspaceIndex) => {
+		symbols = await indexer.getSymbols();
 		console.log(symbols);
 		provider2.dispose();
 		provider2 = getLinkProvider();
 		context.subscriptions.push(provider2);
 	}
 
-	vscode.workspace.onDidCreateFiles(fsChangeHandler);
-	vscode.workspace.onDidRenameFiles(fsChangeHandler);
-	vscode.workspace.onDidDeleteFiles(fsChangeHandler);
-	vscode.workspace.onDidChangeWorkspaceFolders(fsChangeHandler);
-	vscode.workspace.onDidChangeTextDocument(fsChangeHandler);
-	fsChangeHandler();
+	const indexer = new WorkspaceIndex(fsChangeHandler);
 
 	context.subscriptions.push(provider, provider2);
 
-	const codelensProvider = new CodelensProvider();
+	const codelensProvider = new CodelensProvider(indexer);
 
     vscode.languages.registerCodeLensProvider('*', codelensProvider);
 }

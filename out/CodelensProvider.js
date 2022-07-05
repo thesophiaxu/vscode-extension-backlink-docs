@@ -2,25 +2,24 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CodelensProvider = void 0;
 const vscode = require("vscode");
-const normalizePath = (path) => path.replace(vscode.workspace.workspaceFolders?.[0].uri.path + '/', '');
+const utils_1 = require("./utils");
 /**
  * CodelensProvider
  */
 class CodelensProvider {
-    constructor() {
+    constructor(indexer) {
         this.codeLenses = [];
         this.regex = /\[\[([^[\]]*)\]\]/g;
+        this.indexer = indexer;
     }
+    /**
+     * Scans
+     * @param document
+     * @param token
+     * @returns
+     */
     async provideCodeLenses(document, token) {
-        const files = await vscode.workspace.findFiles('**/*.*', '**/node_modules/**');
-        const docs = (await Promise.all(files.map(async (file) => {
-            try {
-                return await vscode.workspace.openTextDocument(file);
-            }
-            catch (e) {
-                return undefined;
-            }
-        }))).filter(Boolean);
+        const docs = await this.indexer.getIndex();
         const findInDoc = (document, thing) => {
             let n = 0;
             for (let i = 0; i < document.lineCount; ++i) {
@@ -33,7 +32,7 @@ class CodelensProvider {
         };
         const file = document.uri;
         const mySymbols = await vscode.commands.executeCommand("vscode.executeDocumentSymbolProvider", file);
-        const relativePath = normalizePath(document.uri.path);
+        const relativePath = (0, utils_1.normalizePath)(document.uri.path);
         this.codeLenses = [];
         await Promise.all(mySymbols?.map(async (el) => {
             const repr = `[[${relativePath}#${el.name}]]`;

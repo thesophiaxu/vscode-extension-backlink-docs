@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-
-const normalizePath = (path: string) => path.replace(vscode.workspace.workspaceFolders?.[0].uri.path + '/', '');
+import { WorkspaceIndex } from '.';
+import { normalizePath } from './utils';
 
 /**
  * CodelensProvider
@@ -9,23 +9,24 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 
     private codeLenses: vscode.CodeLens[] = [];
     private regex: RegExp;
+	private indexer: WorkspaceIndex;
 
-    constructor() {
+    constructor(indexer: WorkspaceIndex) {
         this.regex = /\[\[([^[\]]*)\]\]/g;
+		this.indexer = indexer
     }
 
 
+	/**
+	 * Scans 
+	 * @param document 
+	 * @param token 
+	 * @returns 
+	 */
     public async provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
 
+		const docs = await this.indexer.getIndex();
 		
-		const files = await vscode.workspace.findFiles('**/*.*', '**/node_modules/**');
-		const docs: vscode.TextDocument[] = (await Promise.all(files.map(async file => {
-			try {
-				return await vscode.workspace.openTextDocument(file);
-			} catch (e) {
-				return undefined;
-			}
-		}))).filter(Boolean) as any;
 		const findInDoc = (document: vscode.TextDocument, thing: string) => {
 			let n = 0;
 			for (let i = 0; i < document.lineCount; ++i ) {

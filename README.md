@@ -3,6 +3,7 @@
 Bi-directional links in vscode documentations and elsewhere!
 
 ## Demos
+(performance in the demos are outdated, now it's near-instant)
 
 ### Autocomplete
 
@@ -28,4 +29,4 @@ at the same time as references in the codebase, and will be able to update them 
 
 ## Etc
 
-Spent 3 hours on this for a basic MVP. For backlinks I used pretty basic string searches (not rly efficient but it is starting from scratch), and for the extension I referenced the official list of sample extensions.
+Spent 3 hours on this for a basic MVP. For backlinks I used pretty basic string searches (not rly efficient but it is starting from scratch), and for the extension I referenced the official list of sample extensions. Also spent 30 minutes optimizing performance of the app for it to be ready for daily use.
